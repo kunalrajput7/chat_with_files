@@ -91,8 +91,8 @@ def generate_response(query):
         **inputs,
         # max_new_tokens,
         do_sample=True,
-        temperature=0.9,
-        top_p=0.9,
+        temperature=0.6,
+        top_p=0.8,
         # repetition_penatly = 1.2,
     )
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
