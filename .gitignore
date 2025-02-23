@@ -1,0 +1,29 @@
+# Virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Hugging Face model cache (optional, if you don’t want to commit downloaded models)
+*.bin
+*.safetensors
+*.pt
+*.h5
+~/.cache/huggingface/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS-specific files
+.DS_Store  # macOS
+Thumbs.db  # Windows
+
+# Dependency lock files (if you don’t want to commit them)
+Pipfile.lock

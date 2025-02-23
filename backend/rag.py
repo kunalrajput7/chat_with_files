@@ -6,13 +6,13 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 class RAGSystem:
     def __init__(self):
         """
-        Initialize the RAG system with embedding model and LLM.
+        Initialize the RAG system with embedding model and Mixtral-7B-Instruct-v0.3 LLM.
         """
         # Load embedding model for retrieval
         self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
-        # Load tokenizer and model for generation
-        self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mixtral-7B-Instruct-v0.1")
-        self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mixtral-7B-Instruct-v0.1")
+        # Load tokenizer and model for generation (updated to v0.3)
+        self.tokenizer = AutoTokenizer.from_pretrained("mistralai/Mixtral-7B-Instruct-v0.3")
+        self.model = AutoModelForCausalLM.from_pretrained("mistralai/Mixtral-7B-Instruct-v0.3")
         self.index = None  # FAISS index for vector search
         self.sentences = []  # Store original sentences
 
@@ -59,8 +59,8 @@ class RAGSystem:
         Returns:
             str: Generated answer.
         """
-        # Construct prompt
-        prompt = f"Context: {context}\n\nQuestion: {query}\nAnswer:"
+        # Construct prompt (optimized for Mixtral instruct format)
+        prompt = f"<s>[INST] Context: {context}\n\nQuestion: {query}\nAnswer: [/INST]"
         # Tokenize input
         inputs = self.tokenizer(prompt, return_tensors="pt")
         # Generate response
@@ -68,10 +68,14 @@ class RAGSystem:
             inputs["input_ids"],
             max_length=200,
             num_return_sequences=1,
-            no_repeat_ngram_size=2
+            no_repeat_ngram_size=2,
+            do_sample=True,  # Add some randomness for variety
+            temperature=0.7  # Control creativity
         )
         # Decode and return
-        return self.tokenizer.decode(outputs[0], skip_special_tokens=True).split("Answer:")[1].strip()
+        answer = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # Extract just the answer after "[INST]"
+        return answer.split("[/INST]")[1].strip() if "[/INST]" in answer else answer
 
     def answer_query(self, query):
         """
@@ -85,8 +89,9 @@ class RAGSystem:
         context_sentences = self.retrieve(query)
         context = ". ".join(context_sentences)
         return self.generate_answer(query, context)
+    
 
-# Test the class (optional)
+# Test the class
 if __name__ == "__main__":
     rag = RAGSystem()
     sample_sentences = ["The sky is blue.", "The grass is green.", "Water is wet."]
