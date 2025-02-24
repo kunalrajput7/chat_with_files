@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from sentence_transformers import SentenceTransformer
 import faiss
@@ -9,15 +10,23 @@ import os
 
 app = FastAPI()
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vite’s default dev server
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
 # Model configuration (flexible for local vs. cloud)
-MODEL_NAME = os.getenv("MODEL_NAME", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")  # Default to TinyLlama
-USE_QUANTIZATION = torch.cuda.is_available() and torch.cuda.get_device_properties(0).total_memory < 6e9  # Quantize if GPU < 6GB
+MODEL_NAME = os.getenv("MODEL_NAME", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+USE_QUANTIZATION = torch.cuda.is_available() and torch.cuda.get_device_properties(0).total_memory < 6e9
 
 # Load tokenizer and model
 print(f"Initializing model: {MODEL_NAME}")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
-# Quantization config (optional, for low-memory setups)
 quant_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_use_double_quant=True,
@@ -25,7 +34,6 @@ quant_config = BitsAndBytesConfig(
     bnb_4bit_compute_dtype=torch.float16
 ) if USE_QUANTIZATION else None
 
-# Load model
 model_kwargs = {
     "pretrained_model_name_or_path": MODEL_NAME,
     "device_map": "auto",
@@ -84,22 +92,19 @@ def generate_response(query):
     relevant_chunks = [pdf_chunks[i] for i in I[0]]
     context = "\n".join(relevant_chunks)
 
-    prompt = f"You are a helpful assistant. Based on this context:\n{context}\n\nAnswer the question '{query}' in a clear, concise, and natural way:"
+    prompt = f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
     inputs = tokenizer(prompt, return_tensors="pt").to("cuda" if torch.cuda.is_available() else "cpu")
     
     outputs = model.generate(
         **inputs,
-        # max_new_tokens,
+        max_new_tokens=100,
         do_sample=True,
-        temperature=0.6,
-        top_p=0.8,
-        # repetition_penatly = 1.2,
+        temperature=0.7,
+        top_p=0.9
     )
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     if response.startswith(prompt):
         response = response[len(prompt):].strip()
-    if not response.endswith(('.', '!', '?')):
-        response += '.'
     return response
 
 # API endpoints
