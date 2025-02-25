@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Box, Dialog, Typography, CircularProgress } from '@mui/material';
+import { Box, Dialog } from '@mui/material';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Navbar from './components/Navbar';
 import PdfList from './components/PdfList';
 import ChatArea from './components/ChatArea';
+import DialogComponent from './components/Dialog'; // Matches your file name
 
 function App() {
   const [file, setFile] = useState(null);
@@ -48,77 +49,36 @@ function App() {
     }
   };
 
-  const preventDefault = (event) => event.preventDefault();
+  // Debug logs
+  console.log('App render - uploadStatus:', uploadStatus);
+  console.log('App render - file:', file);
 
   return (
     <Box
       sx={{
         bgcolor: theme === 'dark' ? 'black' : 'white',
-        height: '100vh', // Fixed height to viewport
-        width: '100vw', // Fixed width to viewport
-        overflow: 'hidden', // Prevent outer scroll
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
       <Navbar theme={theme} toggleTheme={toggleTheme} />
-      {/* Dialog for Upload */}
+      {/* Upload Dialog */}
       <Dialog
         open={!uploadStatus || uploadStatus !== 'done'}
-        PaperProps={{
-          sx: {
-            bgcolor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(5px)',
-            p: 4,
-          },
-        }}
+        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}
         fullWidth
         maxWidth="sm"
-        component={motion.div}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.3 }}
+        sx={{ backdropFilter: 'blur(5px)', bgcolor: 'rgba(0, 0, 0, 0.5)' }}
       >
-        <Box
-          sx={{
-            textAlign: 'center',
-            color: theme === 'dark' ? 'white' : 'black',
-            cursor: uploadStatus ? 'default' : 'pointer',
-          }}
-          onClick={!uploadStatus ? () => document.getElementById('fileInput').click() : null}
+        <DialogComponent
+          theme={theme}
+          onFileChange={handleFileChange}
           onDrop={handleDrop}
-          onDragOver={preventDefault}
-          onDragEnter={preventDefault}
-        >
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Upload a PDF to get started
-          </Typography>
-          {uploadStatus === 'uploading' || uploadStatus === 'processing' ? (
-            <>
-              <CircularProgress sx={{ color: theme === 'dark' ? 'white' : 'black' }} />
-              <Typography sx={{ mt: 2 }}>
-                {uploadStatus === 'uploading' ? 'Uploading...' : 'Processing...'}
-              </Typography>
-            </>
-          ) : (
-            <motion.img
-              src="https://cdn-icons-png.flaticon.com/512/32/32339.png"
-              alt="Upload"
-              width={64}
-              height={64}
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.2 }}
-            />
-          )}
-          <input
-            type="file"
-            accept=".pdf"
-            id="fileInput"
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-          />
-        </Box>
+          uploadStatus={uploadStatus}
+        />
       </Dialog>
 
       {/* Main Page */}
@@ -129,11 +89,11 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           sx={{
-            flexGrow: 1, // Takes remaining space after navbar
+            flexGrow: 1,
             display: 'flex',
             flexDirection: 'row',
-            height: 'calc(100vh - 64px)', // Exact height after navbar
-            overflow: 'hidden', // No scroll here either
+            height: 'calc(100vh - 64px)',
+            overflow: 'hidden',
           }}
         >
           <PdfList uploadedFile={file} theme={theme} />
