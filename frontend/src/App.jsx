@@ -51,7 +51,16 @@ function App() {
   const preventDefault = (event) => event.preventDefault();
 
   return (
-    <Box sx={{ bgcolor: theme === 'dark' ? 'black' : 'white', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        bgcolor: theme === 'dark' ? 'black' : 'white',
+        height: '100vh', // Fixed height to viewport
+        width: '100vw', // Fixed width to viewport
+        overflow: 'hidden', // Prevent outer scroll
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Navbar theme={theme} toggleTheme={toggleTheme} />
       {/* Dialog for Upload */}
       <Dialog
@@ -114,15 +123,22 @@ function App() {
 
       {/* Main Page */}
       {uploadStatus === 'done' && (
-        <motion.div
+        <Box
+          component={motion.div}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          style={{ marginTop: '64px', display: 'flex' }}
+          sx={{
+            flexGrow: 1, // Takes remaining space after navbar
+            display: 'flex',
+            flexDirection: 'row',
+            height: 'calc(100vh - 64px)', // Exact height after navbar
+            overflow: 'hidden', // No scroll here either
+          }}
         >
           <PdfList uploadedFile={file} theme={theme} />
           <ChatArea uploadedFile={file} theme={theme} />
-        </motion.div>
+        </Box>
       )}
     </Box>
   );
