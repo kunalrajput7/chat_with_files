@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import AddIcon from '@mui/icons-material/Add';
 import HereImage from '../assets/here.png'; // For desktop
 import Here2Image from '../assets/here2.png'; // For mobile
-import UploadGif from '../assets/Upload.gif'; // For uploading state
+import Upload from '../assets/Upload.gif';
 
 function Dialog({ onFileChange, onDrop, uploadStatus }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -60,7 +60,7 @@ function Dialog({ onFileChange, onDrop, uploadStatus }) {
           mx: 'auto',
         }}
       >
-        <img src={UploadGif} alt="Uploading" style={{ width: 150, height: 150 }} />
+        <img src={Upload} alt="Uploading" style={{ width: 150, height: 150 }} />
       </Box>
     );
   }

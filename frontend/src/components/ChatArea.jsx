@@ -6,15 +6,25 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import axios from 'axios';
 import PdfIcon from '../assets/pdf_icon.png';
 import SendIcon from '../assets/send.png';
-import { loadState, saveState, storePDF, getStoredPDF } from '../utils/storage';
-
 
 function ChatArea({ uploadedFile, theme, isMobile }) {
-  
   const [query, setQuery] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [animatedText, setAnimatedText] = useState(''); // State for animated text
   const messagesEndRef = useRef(null);
+
+  // Load chat history from localStorage
+  useEffect(() => {
+    const savedChatHistory = localStorage.getItem('chatHistory');
+    if (savedChatHistory) {
+      setChatHistory(JSON.parse(savedChatHistory));
+    }
+  }, []);
+
+  // Save chat history to localStorage
+  useEffect(() => {
+    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+  }, [chatHistory]);
 
   // Auto-scroll to the bottom on new message
   useEffect(() => {

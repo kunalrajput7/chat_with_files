@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { Document, Page, pdfjs } from 'react-pdf';
 
+
 // Set worker source to a CDN (stable version) or local file
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
