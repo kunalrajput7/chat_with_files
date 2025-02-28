@@ -13,6 +13,7 @@ function Navbar({ theme, toggleTheme }) {
         backdropFilter: 'blur(5px)',
         boxShadow: 'none',
         color: isDark ? 'white' : 'black',
+        
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1, sm: 6 } }}>

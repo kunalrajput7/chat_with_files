@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useRef } from 'react';
-import { Box, TextField, IconButton, List, ListItem, Paper, Avatar, CircularProgress,  Typography } from '@mui/material';
+import { Box, TextField, IconButton, List, ListItem, Paper, Avatar, CircularProgress, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import axios from 'axios';
@@ -38,8 +38,13 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
     }
   }, [chatHistory]);
 
+  // Check if AI is currently responding
+  const isAIResponding = chatHistory.some(
+    (message) => message.type === 'ai' && message.loading
+  );
+
   const handleQuery = async () => {
-    if (!query) return;
+    if (!query || isAIResponding) return; // Prevent sending if AI is responding
     
     const newUserMsg = { type: 'user', text: query };
     const newAiMsg = { type: 'ai', text: '', loading: true };
@@ -207,7 +212,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
                 {message.loading ? (
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <CircularProgress size={20} sx={{ mr: 1 }} />
-                    <span>Loading...</span>
+                    <span>Thinking...</span>
                   </Box>
                 ) : (
                   // Display animated text for the latest AI response
@@ -239,7 +244,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
           label="Type your question..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleQuery()}
+          onKeyPress={(e) => e.key === 'Enter' && !isAIResponding && handleQuery()} // Disable Enter key if AI is responding
           sx={{
             input: { color: theme === 'dark' ? 'white' : 'black' },
             label: { color: theme === 'dark' ? '#aaa' : '#666' },
@@ -260,10 +265,14 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
         />
         <IconButton
           onClick={handleQuery}
+          disabled={isAIResponding} // Disable button if AI is responding
           sx={{
             p: 1, // Adjust padding as needed
             '&:hover': {
               backgroundColor: theme === 'dark' ? 'rgba(2, 136, 209, 0.1)' : 'rgba(25, 118, 210, 0.1)', // Subtle hover effect
+            },
+            '&:disabled': {
+              opacity: 0.5, // Reduce opacity when disabled
             },
           }}
         >
@@ -275,6 +284,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
               p: 0,
               width: 34, // Adjust size as needed
               height: 34,
+              filter: isAIResponding ? 'grayscale(1)' : 'none', // Grayscale effect when disabled
             }}
           />
         </IconButton>
