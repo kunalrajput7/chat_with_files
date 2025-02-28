@@ -10,6 +10,7 @@ function PdfList({ uploadedFile, theme }) {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // Create PDF URL and cleanup
   useEffect(() => {
@@ -21,6 +22,20 @@ function PdfList({ uploadedFile, theme }) {
       setPdfUrl(null);
     }
   }, [uploadedFile]);
+
+  // Calculate container width dynamically
+  useEffect(() => {
+    const updateWidth = () => {
+      const container = document.getElementById('pdf-container');
+      if (container) {
+        setContainerWidth(container.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -38,6 +53,7 @@ function PdfList({ uploadedFile, theme }) {
 
   return (
     <Box
+      id="pdf-container"
       sx={{
         width: '50%',
         height: '100%',
@@ -45,33 +61,13 @@ function PdfList({ uploadedFile, theme }) {
         color: theme === 'dark' ? 'white' : 'black',
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 5,
-        paddingRight: 5,
+        paddingLeft: 2,
+        paddingRight: 2,
+        marginTop: 4,
       }}
     >
       {uploadedFile && pdfUrl ? (
         <>
-          {/* PDF Name Bubble - Centered Top */}
-          {/* <Button
-            sx={{
-              position: 'absolute',
-              bottom: 10,
-              right: '50%',
-              transform: 'translateX(-50%)',
-              bgcolor: theme === 'dark' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-              color: theme === 'dark' ? 'white' : 'black',
-              zIndex: 1,
-              borderRadius: '15px',
-              px: 2,
-              '&:hover': {
-                bgcolor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-              },
-              fontSize: 10,
-            }}
-          >
-            {uploadedFile.name}
-          </Button> */}
-
           {/* PDF Content */}
           <Box
             onScroll={handleScroll}
@@ -80,6 +76,8 @@ function PdfList({ uploadedFile, theme }) {
               height: '100%',
               overflowY: 'auto',
               bgcolor: theme === 'dark' ? '#333' : '#fff',
+              display: 'flex',
+              justifyContent: 'center', // Center the PDF content
             }}
           >
             <Document
@@ -92,8 +90,7 @@ function PdfList({ uploadedFile, theme }) {
                 <Page
                   key={`page_${index + 1}`}
                   pageNumber={index + 1}
-                //   width={Math.min(400, window.innerWidth * 0.45)}
-                // width={}
+                  width={containerWidth - 52} // Adjust for padding (16px on each side)
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                 />
@@ -114,9 +111,6 @@ function PdfList({ uploadedFile, theme }) {
                 zIndex: 1,
                 borderRadius: '20px',
                 px: 2,
-                // '&:hover': {
-                //   bgcolor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                // },
                 fontSize: 10,
               }}
             >

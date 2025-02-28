@@ -99,7 +99,7 @@ function App() {
               flexGrow: 1,
               display: 'flex',
               flexDirection: 'row',
-              height: 'calc(100vh - 64px)',
+              height: '100%',
               overflow: 'hidden',
             }}
           >

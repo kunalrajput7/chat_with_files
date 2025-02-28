@@ -124,7 +124,7 @@ function Dialog({ onFileChange, onDrop, uploadStatus }) {
             <img
               src={Here2Image}
               alt="Here2"
-              style={{ width: '100%', height: 'auto', alignSelf: 'stretch' }}
+              style={{ width: '100%', height: 'auto', marginLeft: 40}}
             />
           </Box>
           <input
