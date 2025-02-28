@@ -6,8 +6,11 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import axios from 'axios';
 import PdfIcon from '../assets/pdf_icon.png';
 import SendIcon from '../assets/send.png';
+import { loadState, saveState, storePDF, getStoredPDF } from '../utils/storage';
+
 
 function ChatArea({ uploadedFile, theme, isMobile }) {
+  
   const [query, setQuery] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [animatedText, setAnimatedText] = useState(''); // State for animated text
