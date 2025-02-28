@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { Box, Dialog } from '@mui/material';
+import { Box, Dialog, useMediaQuery } from '@mui/material';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Navbar from './components/Navbar';
 import PdfList from './components/PdfList';
 import ChatArea from './components/ChatArea';
-import DialogComponent from './components/Dialog'; // Matches your file name
+import DialogComponent from './components/Dialog'; // Updated to match file name
 
 function App() {
   const [file, setFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null); // null, 'uploading', 'processing', 'done'
   const [theme, setTheme] = useState('dark'); // Default to dark
+
+  // Detect mobile screens (max-width 600px)
+  const isMobile = useMediaQuery('(max-width:600px)');
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -49,7 +52,6 @@ function App() {
     }
   };
 
-  // Debug logs
   console.log('App render - uploadStatus:', uploadStatus);
   console.log('App render - file:', file);
 
@@ -82,24 +84,29 @@ function App() {
       </Dialog>
 
       {/* Main Page */}
-      {uploadStatus === 'done' && (
-        <Box
-          component={motion.div}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          sx={{
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'row',
-            height: 'calc(100vh - 64px)',
-            overflow: 'hidden',
-          }}
-        >
-          <PdfList uploadedFile={file} theme={theme} />
-          <ChatArea uploadedFile={file} theme={theme} />
-        </Box>
-      )}
+      {uploadStatus === 'done' &&
+        (isMobile ? (
+          // Mobile view: Only ChatArea (with pdf bubble inside)
+          <ChatArea uploadedFile={file} theme={theme} isMobile={true} />
+        ) : (
+          // Desktop view: Two-column layout
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'row',
+              height: 'calc(100vh - 64px)',
+              overflow: 'hidden',
+            }}
+          >
+            <PdfList uploadedFile={file} theme={theme} />
+            <ChatArea uploadedFile={file} theme={theme} isMobile={false} />
+          </Box>
+        ))}
     </Box>
   );
 }
