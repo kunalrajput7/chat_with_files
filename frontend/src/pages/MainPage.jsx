@@ -1,53 +1,72 @@
 // src/pages/MainPage.jsx
-import { useState } from 'react';
-import { Box, Dialog, useMediaQuery } from '@mui/material';
-import { motion } from 'framer-motion';
-import Navbar from '../components/Navbar';
-import PdfList from '../components/PdfList';
-import ChatArea from '../components/ChatArea';
-import DialogComponent from '../components/Dialog';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, storage, db } from '../firebase';
+import { useState, useEffect } from "react";
+import { Box, useMediaQuery, Toolbar } from "@mui/material";
+// import { motion } from 'framer-motion';
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import PdfList from "../components/PdfPreview";
+import ChatArea from "../components/ChatArea";
+import DialogComponent from "../components/Dialog";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { auth, storage, db } from "../firebase";
 
 function MainPage() {
-  const [file, setFile] = useState(null);
+  // selectedFile holds the file object (with downloadURL etc.) from Firestore
+  const [selectedFile, setSelectedFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null); // 'uploading', 'processing', 'done'
-  const [theme, setTheme] = useState('dark');
-  const isMobile = useMediaQuery('(max-width:600px)');
+  const [theme, setTheme] = useState("dark");
+  const isMobile = useMediaQuery("(max-width:600px)");
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  // Close sidebar when switching to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
+
+  const handleNewChat = () => {
+    setSelectedFile(null);
   };
 
   const handleFileChange = async (event) => {
-    const selectedFile = event.target.files[0];
-    if (!selectedFile) return;
+    const fileObj = event.target.files[0];
+    if (!fileObj) return;
 
-    setUploadStatus('uploading');
+    setUploadStatus("uploading");
     const user = auth.currentUser;
     if (!user) {
       alert("User not logged in");
       return;
     }
 
-    // Create a storage reference for this file.
-    const storageRef = ref(storage, `users/${user.uid}/files/${selectedFile.name}`);
+    const storageRef = ref(storage, `users/${user.uid}/files/${fileObj.name}`);
     try {
-      // Upload the file to Firebase Storage.
-      await uploadBytes(storageRef, selectedFile);
+      await uploadBytes(storageRef, fileObj);
       const downloadURL = await getDownloadURL(storageRef);
-
-      // Save file details in Firestore under a subcollection "files" in the user's document.
       const fileData = {
-        fileName: selectedFile.name,
+        fileName: fileObj.name,
         downloadURL,
         uploadedAt: serverTimestamp(),
       };
-      await addDoc(collection(db, 'users', user.uid, 'files'), fileData);
-
-      setFile(selectedFile);
-      setUploadStatus('done');
+      const docRef = await addDoc(
+        collection(db, "users", user.uid, "files"),
+        fileData
+      );
+      // Set the selected file using the Firestore document data
+      setSelectedFile({ id: docRef.id, ...fileData });
+      setUploadStatus("done");
     } catch (error) {
       console.error("Error uploading file: ", error);
       setUploadStatus(null);
@@ -57,8 +76,7 @@ function MainPage() {
   const handleDrop = (event) => {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'application/pdf') {
-      setFile(droppedFile);
+    if (droppedFile && droppedFile.type === "application/pdf") {
       handleFileChange({ target: { files: [droppedFile] } });
     }
   };
@@ -66,53 +84,100 @@ function MainPage() {
   return (
     <Box
       sx={{
-        bgcolor: theme === 'dark' ? 'black' : 'white',
-        height: '100vh',
-        width: '100vw',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
+        bgcolor: theme === "dark" ? "black" : "white",
+        height: "100vh",
+        width: "100vw",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <Navbar theme={theme} toggleTheme={toggleTheme} />
-      {/* Upload Dialog */}
-      <Dialog
-        open={!uploadStatus || uploadStatus !== 'done'}
-        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}
-        fullWidth
-        maxWidth="sm"
-        sx={{ backdropFilter: 'blur(5px)', bgcolor: 'rgba(0, 0, 0, 0.5)' }}
+      {/* Fixed Navbar */}
+      <Navbar
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onToggleSidebar={toggleSidebar}
+      />
+      <Toolbar /> {/* Spacer */}
+      {/* Always show sidebar and main content area */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          height: "calc(100vh - 64px)", // Subtract navbar height
+        }}
       >
-        <DialogComponent
-          theme={theme}
-          onFileChange={handleFileChange}
-          onDrop={handleDrop}
-          uploadStatus={uploadStatus}
-        />
-      </Dialog>
-
-      {/* Main Content */}
-      {uploadStatus === 'done' &&
-        (isMobile ? (
-          <ChatArea uploadedFile={file} theme={theme} isMobile={true} />
-        ) : (
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            sx={{
-              flexGrow: 1,
-              display: 'flex',
-              flexDirection: 'row',
-              height: '100%',
-              overflow: 'hidden',
+        {/* Conditional rendering for mobile sidebar */}
+        {(sidebarOpen || !isMobile) && (
+          <Sidebar
+            theme={theme}
+            onSelectFile={(file) => {
+              setSelectedFile(file);
+              if (isMobile) setSidebarOpen(false); // Close sidebar on mobile selection
             }}
-          >
-            <PdfList uploadedFile={file} theme={theme} />
-            <ChatArea uploadedFile={file} theme={theme} isMobile={false} />
-          </Box>
-        ))}
+            selectedFileId={selectedFile?.id}
+            isMobile={isMobile}
+            onClose={() => setSidebarOpen(false)}
+            sx={{
+              transform: isMobile
+                ? sidebarOpen
+                  ? "translateX(0)"
+                  : "translateX(-100%)"
+                : "none",
+            }}
+            handleNewChat={handleNewChat}
+          />
+        )}
+
+        {/* Main Content Area */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            bgcolor: theme === "dark" ? "#1a1a1a" : "#f5f5f5",
+          }}
+        >
+          {selectedFile ? (
+            // Existing PDF Preview & Chat Area
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+              }}
+            >
+              <PdfList uploadedFile={selectedFile} theme={theme} />
+              <ChatArea
+                uploadedFile={selectedFile}
+                theme={theme}
+                isMobile={isMobile}
+              />
+            </Box>
+          ) : (
+            // Show Upload Dialog in the main content area
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 2,
+              }}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              <DialogComponent
+                theme={theme}
+                onFileChange={handleFileChange}
+                onDrop={handleDrop}
+                uploadStatus={uploadStatus}
+              />
+            </Box>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 }

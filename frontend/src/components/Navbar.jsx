@@ -11,11 +11,13 @@ import {
   DialogActions, 
   Button 
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu'; // Add this import
+
 import { DarkMode as MoonIcon, LightMode as SunIcon, Logout as LogoutIcon } from '@mui/icons-material';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 
-function Navbar({ theme, toggleTheme }) {
+function Navbar({ theme, toggleTheme, onToggleSidebar  }) {
   const isDark = theme === 'dark';
   const [openLogout, setOpenLogout] = useState(false);
 
@@ -45,6 +47,13 @@ function Navbar({ theme, toggleTheme }) {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1, sm: 6 } }}>
+        <IconButton
+              color="inherit"
+              onClick={onToggleSidebar}
+              sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
           <Typography
             variant="h6"
             sx={{
@@ -99,6 +108,7 @@ function Navbar({ theme, toggleTheme }) {
 Navbar.propTypes = {
   theme: PropTypes.oneOf(['dark', 'light']).isRequired,
   toggleTheme: PropTypes.func.isRequired,
+  onToggleSidebar: PropTypes.func.isRequired,
 };
 
 export default Navbar;

@@ -69,9 +69,9 @@ function Dialog({ onFileChange, onDrop, uploadStatus }) {
     return (
       <Box sx={{ m: 2 }}>
         {/* Heading outside the dialog box */}
-        <Typography variant="h6" align="center" sx={{ mb: 2 }}>
+        {/* <Typography variant="h6" align="center" sx={{ mb: 2 }}>
           Upload your PDF to get started.
-        </Typography>
+        </Typography> */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, scale: 0.2 }}
@@ -178,9 +178,9 @@ function Dialog({ onFileChange, onDrop, uploadStatus }) {
             position: 'relative',
           }}
         >
-          <Typography variant="h6" sx={{ alignSelf: 'end', mr: 3 }}>
+          {/* <Typography variant="h6" sx={{ alignSelf: 'end', mr: 3 }}>
             Upload your PDF to get started.
-          </Typography>
+          </Typography> */}
           <Typography variant="body2" sx={{ color: '#b0b0b0', mb: 2, mr: 3, alignSelf: 'end' }}>
             Drag or click and start chatting
           </Typography>

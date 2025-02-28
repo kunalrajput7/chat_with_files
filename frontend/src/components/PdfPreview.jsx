@@ -1,10 +1,9 @@
+// src/components/PdfList.jsx
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-
-// Set worker source to a CDN (stable version) or local file
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 function PdfList({ uploadedFile, theme }) {
@@ -13,18 +12,28 @@ function PdfList({ uploadedFile, theme }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Create PDF URL and cleanup
   useEffect(() => {
     if (uploadedFile) {
-      const url = URL.createObjectURL(uploadedFile);
-      setPdfUrl(url);
-      return () => URL.revokeObjectURL(url);
+      if (uploadedFile.downloadURL) {
+        setPdfUrl(uploadedFile.downloadURL);
+        console.log("Using downloadURL:", uploadedFile.downloadURL);
+      } else {
+        try {
+          const url = URL.createObjectURL(uploadedFile);
+          setPdfUrl(url);
+          console.log("Using object URL:", url);
+          return () => URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("Error creating object URL:", error);
+          setPdfUrl(null);
+        }
+      }
     } else {
       setPdfUrl(null);
     }
   }, [uploadedFile]);
+  
 
-  // Calculate container width dynamically
   useEffect(() => {
     const updateWidth = () => {
       const container = document.getElementById('pdf-container');
@@ -32,7 +41,6 @@ function PdfList({ uploadedFile, theme }) {
         setContainerWidth(container.offsetWidth);
       }
     };
-
     updateWidth();
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
@@ -40,10 +48,9 @@ function PdfList({ uploadedFile, theme }) {
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
-    setCurrentPage(1); // Reset to first page on new PDF
+    setCurrentPage(1);
   };
 
-  // Handle scroll to determine current page
   const handleScroll = (event) => {
     const container = event.target;
     const pageHeight = container.scrollHeight / numPages;
@@ -62,14 +69,12 @@ function PdfList({ uploadedFile, theme }) {
         color: theme === 'dark' ? 'white' : 'black',
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 2,
-        paddingRight: 2,
-        marginTop: 4,
+        p: 2,
+        mt: 4,
       }}
     >
       {uploadedFile && pdfUrl ? (
         <>
-          {/* PDF Content */}
           <Box
             onScroll={handleScroll}
             sx={{
@@ -78,7 +83,7 @@ function PdfList({ uploadedFile, theme }) {
               overflowY: 'auto',
               bgcolor: theme === 'dark' ? '#333' : '#fff',
               display: 'flex',
-              justifyContent: 'center', // Center the PDF content
+              justifyContent: 'center',
             }}
           >
             <Document
@@ -91,15 +96,13 @@ function PdfList({ uploadedFile, theme }) {
                 <Page
                   key={`page_${index + 1}`}
                   pageNumber={index + 1}
-                  width={containerWidth - 52} // Adjust for padding (16px on each side)
+                  width={containerWidth - 52}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                 />
               ))}
             </Document>
           </Box>
-
-          {/* Page Number Bubble - Centered Bottom */}
           {numPages && (
             <Button
               sx={{
@@ -120,7 +123,7 @@ function PdfList({ uploadedFile, theme }) {
           )}
         </>
       ) : (
-        <Typography sx={{ p: 2 }}>No PDF uploaded yet.</Typography>
+        <Typography sx={{ p: 2 }}>No PDF selected.</Typography>
       )}
     </Box>
   );
@@ -128,7 +131,8 @@ function PdfList({ uploadedFile, theme }) {
 
 PdfList.propTypes = {
   uploadedFile: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+    fileName: PropTypes.string,
+    downloadURL: PropTypes.string,
   }),
   theme: PropTypes.oneOf(['dark', 'light']).isRequired,
 };
