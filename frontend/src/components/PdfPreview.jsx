@@ -63,14 +63,11 @@ function PdfList({ uploadedFile, theme }) {
     <Box
       id="pdf-container"
       sx={{
-        width: '50%',
+        width: '100%',
         height: '100%',
         bgcolor: theme === 'dark' ? '#1a1a1a' : '#f5f5f5',
-        color: theme === 'dark' ? 'white' : 'black',
-        position: 'relative',
-        overflow: 'hidden',
-        p: 2,
-        mt: 4,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {uploadedFile && pdfUrl ? (
