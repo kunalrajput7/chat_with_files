@@ -1,20 +1,39 @@
-// src/components/PdfPreview.jsx
+// src/components/PdfList.jsx
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Box, Button, Typography, CircularProgress } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
-function PdfPreview({ uploadedFile, theme }) {
+function PdfList({ uploadedFile, theme }) {
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Calculate container width
+  useEffect(() => {
+    if (uploadedFile) {
+      if (uploadedFile.downloadURL) {
+        setPdfUrl(uploadedFile.downloadURL);
+        console.log("Using downloadURL:", uploadedFile.downloadURL);
+      } else {
+        try {
+          const url = URL.createObjectURL(uploadedFile);
+          setPdfUrl(url);
+          console.log("Using object URL:", url);
+          return () => URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("Error creating object URL:", error);
+          setPdfUrl(null);
+        }
+      }
+    } else {
+      setPdfUrl(null);
+    }
+  }, [uploadedFile]);
+  
+
   useEffect(() => {
     const updateWidth = () => {
       const container = document.getElementById('pdf-container');
@@ -22,34 +41,17 @@ function PdfPreview({ uploadedFile, theme }) {
         setContainerWidth(container.offsetWidth);
       }
     };
-    
     updateWidth();
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  // Reset state when new file is selected
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    setNumPages(null);
-    setCurrentPage(1);
-  }, [uploadedFile]);
-
-  const handleLoadSuccess = ({ numPages }) => {
-    setLoading(false);
+  const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
-  };
-
-  const handleLoadError = (error) => {
-    console.error('PDF load error:', error);
-    setLoading(false);
-    setError('Failed to load PDF');
+    setCurrentPage(1);
   };
 
   const handleScroll = (event) => {
-    if (!numPages) return;
-    
     const container = event.target;
     const pageHeight = container.scrollHeight / numPages;
     const scrollPosition = container.scrollTop;
@@ -66,10 +68,9 @@ function PdfPreview({ uploadedFile, theme }) {
         bgcolor: theme === 'dark' ? '#1a1a1a' : '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
-        position: 'relative',
       }}
     >
-      {uploadedFile?.downloadURL ? (
+      {uploadedFile && pdfUrl ? (
         <>
           <Box
             onScroll={handleScroll}
@@ -78,53 +79,40 @@ function PdfPreview({ uploadedFile, theme }) {
               height: '100%',
               overflowY: 'auto',
               bgcolor: theme === 'dark' ? '#333' : '#fff',
+              display: 'flex',
+              justifyContent: 'center',
             }}
           >
             <Document
-              file={uploadedFile.downloadURL}
-              onLoadSuccess={handleLoadSuccess}
-              onLoadError={handleLoadError}
-              loading={
-                <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
-                  <CircularProgress />
-                </Box>
-              }
+              file={pdfUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={<Typography>Loading PDF...</Typography>}
+              error={<Typography>Error loading PDF.</Typography>}
             >
-              {Array.from({ length: numPages }, (_, index) => (
+              {Array.from(new Array(numPages), (el, index) => (
                 <Page
                   key={`page_${index + 1}`}
                   pageNumber={index + 1}
-                  width={containerWidth - 32} // Add some padding
+                  width={containerWidth - 52}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
-                  loading={
-                    <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
-                      <CircularProgress />
-                    </Box>
-                  }
                 />
               ))}
             </Document>
           </Box>
-
-          {error && (
-            <Typography color="error" sx={{ p: 2, textAlign: 'center' }}>
-              {error}
-            </Typography>
-          )}
-
           {numPages && (
             <Button
               sx={{
                 position: 'absolute',
-                bottom: 16,
+                bottom: 10,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                bgcolor: 'rgba(0, 0, 0, 0.65)',
                 color: 'white',
+                zIndex: 1,
                 borderRadius: '20px',
-                px: 3,
-                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.8)' }
+                px: 2,
+                fontSize: 10,
               }}
             >
               Page {currentPage} of {numPages}
@@ -132,15 +120,13 @@ function PdfPreview({ uploadedFile, theme }) {
           )}
         </>
       ) : (
-        <Typography sx={{ p: 2, textAlign: 'center' }}>
-          {uploadedFile ? 'Invalid PDF URL' : 'No PDF selected'}
-        </Typography>
+        <Typography sx={{ p: 2 }}>No PDF selected.</Typography>
       )}
     </Box>
   );
 }
 
-PdfPreview.propTypes = {
+PdfList.propTypes = {
   uploadedFile: PropTypes.shape({
     fileName: PropTypes.string,
     downloadURL: PropTypes.string,
@@ -148,4 +134,4 @@ PdfPreview.propTypes = {
   theme: PropTypes.oneOf(['dark', 'light']).isRequired,
 };
 
-export default PdfPreview;
+export default PdfList;
