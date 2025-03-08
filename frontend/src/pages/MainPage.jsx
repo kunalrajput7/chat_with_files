@@ -91,6 +91,33 @@ function MainPage() {
     );
   }
 
+  // Add this function inside your MainPage component
+const handleSelectFile = async (file) => {
+  try {
+    // Call backend to load the selected PDF
+    const response = await fetch('http://localhost:8000/load_pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        download_url: file.downloadURL
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load PDF');
+    }
+
+    // If successful, update the selected file
+    setSelectedFile(file);
+    if (isMobile) setSidebarOpen(false);
+  } catch (error) {
+    console.error('Error loading PDF:', error);
+    alert('Failed to load PDF. Please try again.');
+  }
+};
+
   return (
     <Box sx={{
       bgcolor: theme === "dark" ? "black" : "white",
@@ -117,7 +144,7 @@ function MainPage() {
             theme={theme}
             files={userFiles}
             selectedFileId={selectedFile?.id}
-            onSelectFile={setSelectedFile}
+            onSelectFile={handleSelectFile}
             isMobile={isMobile}
             onClose={() => setSidebarOpen(false)}
             handleNewChat={handleNewChat}

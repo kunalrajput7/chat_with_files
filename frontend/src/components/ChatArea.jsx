@@ -32,7 +32,6 @@ import SendIcon from "../assets/send.png";
 function ChatArea({ uploadedFile, theme, isMobile }) {
   const [queryText, setQueryText] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
-  const [animatedText, setAnimatedText] = useState(""); // For typewriter-style animation
   const messagesEndRef = useRef(null);
 
   // Set up a Firestore listener to fetch chat history for the selected PDF.
@@ -72,26 +71,6 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
-  // Typing animation for the latest AI response.
-  useEffect(() => {
-    if (chatHistory.length === 0) return;
-    const latestMessage = chatHistory[chatHistory.length - 1];
-    if (latestMessage?.role === "assistant" && !latestMessage.loading) {
-      const words = latestMessage.message.split(" ");
-      let currentIndex = 0;
-      setAnimatedText(""); // Reset animation text
-      const interval = setInterval(() => {
-        if (currentIndex < words.length) {
-          setAnimatedText((prev) => prev + " " + words[currentIndex]);
-          currentIndex++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 50); // Adjust speed (lower = faster)
-      return () => clearInterval(interval);
-    }
-  }, [chatHistory]);
-
   // Check if AI is currently responding.
   const isAIResponding = chatHistory.some(
     (message) => message.role === "assistant" && message.loading
@@ -102,7 +81,6 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
     if (!queryText || isAIResponding) return;
     if (!uploadedFile || !auth.currentUser) return;
 
-    // Reference to the chats subcollection for the selected PDF.
     const chatRef = collection(
       db,
       "users",
@@ -112,7 +90,6 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
       "chats"
     );
 
-    // Create message objects for the user and a placeholder for the AI.
     const newUserMsg = {
       role: "user",
       message: queryText,
@@ -126,20 +103,14 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
     };
 
     try {
-      // Add the user's message.
       await addDoc(chatRef, newUserMsg);
-      // Add the AI placeholder message and capture its document reference.
       const aiDocRef = await addDoc(chatRef, newAiMsg);
-
-      // Clear the input.
       setQueryText("");
 
-      // Send the query to the backend.
       const res = await axios.get(
         `http://127.0.0.1:8000/query?query=${encodeURIComponent(queryText)}`
       );
 
-      // Update the AI placeholder document with the response.
       await updateDoc(
         doc(
           db,
@@ -158,7 +129,6 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
       );
     } catch (error) {
       console.error("Error sending query: ", error);
-      // Optionally update the AI message with an error message.
     }
   };
 
@@ -177,7 +147,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
         <Box
           sx={{
             position: "fixed",
-            top: 65, // Adjust for navbar height
+            top: 65,
             left: "50%",
             transform: "translateX(-50%)",
             backgroundColor: theme === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
@@ -230,7 +200,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
           overflowY: "auto",
           display: "flex",
           flexDirection: "column-reverse",
-          pt: isMobile && uploadedFile ? 8 : 0, // Padding to avoid overlap with floating bubble
+          pt: isMobile && uploadedFile ? 8 : 0,
         }}
       >
         <List>
@@ -277,10 +247,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
                     <span>Thinking...</span>
                   </Box>
                 ) : (
-                  // For the latest AI message, show animatedText; otherwise, show stored message.
-                  index === chatHistory.length - 1 && message.role === "assistant"
-                    ? animatedText
-                    : message.message
+                  message.message
                 )}
               </Paper>
               {message.role === "user" && (
@@ -300,7 +267,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
       </Box>
 
       {/* Input Section */}
-      <Box sx={{ display: "flex", gap: 0.5, mt: 1, p: 1, pb: 0 }}>
+      <Box sx={{ display: "flex", gap: 0.5, mt: 1, p: 1, pb: 1 }}>
         <TextField
           fullWidth
           label="Type your question..."
@@ -362,7 +329,7 @@ function ChatArea({ uploadedFile, theme, isMobile }) {
 
 ChatArea.propTypes = {
   uploadedFile: PropTypes.shape({
-    id: PropTypes.string.isRequired, // Added to validate the file id
+    id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     downloadURL: PropTypes.string,
   }),
