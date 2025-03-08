@@ -57,6 +57,17 @@ embedder = SentenceTransformer('all-MiniLM-L6-v2')
 index = None
 pdf_chunks = []
 
+
+# We have 3 simple functions to work on our pdfs. Given below.
+
+async def process_pdf_content(content: bytes):
+    try:
+        file_like = io.BytesIO(content)
+        text = extract_text_from_pdf(file_like)
+        process_text(text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def extract_text_from_pdf(file):
     try:
         reader = PyPDF2.PdfReader(file)
@@ -91,13 +102,11 @@ def process_text(text):
     index.add(embeddings)
     print(f"Processed {len(pdf_chunks)} chunks into FAISS index.")
 
-async def process_pdf_content(content: bytes):
-    try:
-        file_like = io.BytesIO(content)
-        text = extract_text_from_pdf(file_like)
-        process_text(text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+# So we have 3 endpoints of Fast API in total. 
+# 1st to upload the pdf.
+# 2nd to load the pdf.
+# 3rd to process the query given by the user.
 
 @app.post("/upload_pdf")
 async def upload_pdf(file: UploadFile = File(...)):
