@@ -60,7 +60,7 @@ function MainPage() {
     }
 
     try {
-      const storageRef = ref(storage, `users/${user.uid}/files/${fileObj.name}`);
+      const storageRef = ref(storage, `users/${user.uid}/${fileObj.name}/${fileObj.name}`);
       await uploadBytes(storageRef, fileObj);
       const downloadURL = await getDownloadURL(storageRef);
       
