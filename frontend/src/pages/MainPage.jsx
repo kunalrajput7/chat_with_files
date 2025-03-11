@@ -51,14 +51,14 @@ function MainPage() {
   const handleFileChange = async (event) => {
     const fileObj = event.target.files[0];
     if (!fileObj) return;
-
+  
     setUploadStatus("uploading");
     const user = auth.currentUser;
     if (!user) {
       alert("User not logged in");
       return;
     }
-
+  
     try {
       const storageRef = ref(storage, `users/${user.uid}/${fileObj.name}/${fileObj.name}`);
       await uploadBytes(storageRef, fileObj);
@@ -75,13 +75,38 @@ function MainPage() {
         fileData
       );
       
-      setSelectedFile({ id: docRef.id, ...fileData });
+      const newFile = { id: docRef.id, ...fileData };
+      setSelectedFile(newFile);
       setUploadStatus("done");
+  
+      // Now, call the backend endpoint to compute and store the FAISS index.
+      // Note: keys must match the Pydantic model: uid, fileName, downloadUrl
+      const computeResponse = await fetch('http://localhost:8000/compute_index', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: user.uid,
+          fileName: fileObj.name,         // Capital "N" as required
+          downloadUrl: downloadURL        // Capital "U" as required
+        }),
+      });
+      if (computeResponse.ok) {
+        const data = await computeResponse.json();
+        console.log("FAISS index URL:", data.faissIndexUrl);
+        // Optionally, update the Firestore document with data.faissIndexUrl here.
+      } else {
+        console.error("Failed to compute FAISS index");
+      }
+      
     } catch (error) {
       console.error("Error uploading file: ", error);
       setUploadStatus(null);
     }
   };
+  
+  
 
   if (loading) {
     return (
